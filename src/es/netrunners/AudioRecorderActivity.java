@@ -18,27 +18,34 @@ import android.widget.Chronometer;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+/**
+ * @author Miguel S. Mendoza
+ * 
+ *         Clase AudioRecorderActivity Implementa la clase Runnable para
+ *         controlar el objeto ProgressBar
+ * 
+ */
 public class AudioRecorderActivity extends Activity implements Runnable {
-	private static final String LOG_TAG = "AudioRecorder"; // TAG for errors
-	private static File mFile;
-	private Button mRecordButton = null;
-	private MediaRecorder mRecorder = null;
+	private static final String LOG_TAG = "AudioRecorder"; // TAG para errores
 
-	private Button mPlayButton = null;
+	// Fichero temporal utilizado tanto para grabar el audio, como para
+	// reproducirlo
+	private static File mFile;
+
+	// Objetos que se encargan de grabar y reproducir audio
+	private MediaRecorder mRecorder = null;
 	private MediaPlayer mPlayer = null;
 
+	// Objetos de Interfaz
+	private Button mRecordButton = null;
+	private Button mPlayButton = null;
 	private Button mStopButton = null;
-
 	private TextView Status;
-
 	Chronometer mChronometer;
-
 	private ProgressBar progressBar;
 
-//	private String PATH = Environment.getExternalStorageDirectory()
-//			.getAbsolutePath() + "/audio/";
-
-	boolean mIsRecording = false; // Booleans to control the state
+	// Booleanos para controlar el estado
+	boolean mIsRecording = false;
 	boolean mIsPlaying = false;
 	boolean player = false;
 	boolean Editing = false;
@@ -48,21 +55,27 @@ public class AudioRecorderActivity extends Activity implements Runnable {
 		super.onCreate(icicle);
 		setContentView(R.layout.audiorecorder);
 		setTitle("Audio Player");
+
+		// Enlazamos con los objetos de Interfaz
 		progressBar = (ProgressBar) findViewById(R.id.progressBar1);
 		Status = (TextView) findViewById(R.id.textView1);
 		mRecordButton = (Button) findViewById(R.id.button0);
 		mChronometer = (Chronometer) findViewById(R.id.chronometer);
 
-		// OnClickListener methods for buttons
+		// OnClickListeners para los botones
 		mRecordButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				if (!mIsRecording && !mIsPlaying) {
+					// Llamamos al método que se encargará de iniciar el objeto
+					// MediaRecorder
 					startRecording();
 					Status.setText("Recording...");
-					// We change the aspect of the button during recording
+					// Cambiamos el aspecto de los botones durante la
+					// reproducción
 					mRecordButton.setCompoundDrawablesWithIntrinsicBounds(0,
 							R.drawable.rec_pressed, 0, 0);
+					// Almacenamos el estado actual
 					mIsRecording = !mIsRecording;
 				}
 			}
@@ -73,17 +86,24 @@ public class AudioRecorderActivity extends Activity implements Runnable {
 			public void onClick(View v) {
 				if (!mIsPlaying && !mIsRecording) {
 					if (mFile != null && mFile.length() > 0) {
+						// Llamamos al método que se encargará de iniciar el
+						// objeto MediaPlayer
 						startPlaying();
+						// Cambiamos el aspecto de los botones durante la
+						// reproducción
 						mPlayButton.setCompoundDrawablesWithIntrinsicBounds(0,
 								R.drawable.audioplayer_button_pause, 0, 0);
 						Status.setText("Playing...");
+						// Almacenamos el estado actual
 						mIsPlaying = !mIsPlaying;
 					}
 				} else if (mIsPlaying && !mIsRecording) {
+					// Si estaba reproduciendo pausamos la reproducción
 					pausePlaying();
 				}
 			}
 		});
+		// El botón STOP realizará diferentes acciones dependiendo del estado
 		mStopButton = (Button) findViewById(R.id.button2);
 		mStopButton.setOnClickListener(new OnClickListener() {
 			@Override
@@ -109,8 +129,9 @@ public class AudioRecorderActivity extends Activity implements Runnable {
 		});
 	}
 
-	// Functions which controls the playback or recording
-
+	/**
+	 * Método que inicia el objeto MediaPlayer con el fichero mFile
+	 */
 	private void startPlaying() {
 		if (mPlayer == null) {
 			mPlayer = new MediaPlayer();
@@ -156,6 +177,9 @@ public class AudioRecorderActivity extends Activity implements Runnable {
 
 	}
 
+	/**
+	 * Método que Pausa la reproducción de MediaPlayer
+	 */
 	private void pausePlaying() {
 		if (mIsPlaying) {
 			mPlayer.pause();
@@ -177,12 +201,16 @@ public class AudioRecorderActivity extends Activity implements Runnable {
 
 	}
 
-	// Media Recorder properties, preparation and start
+	/**
+	 * Inicializa un objeto MediaRecorder estableciendo como fichero destino
+	 * mFile y comienza a obtener sonido del micrófono
+	 */
 	private void startRecording() {
 		mRecorder = new MediaRecorder();
 		mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
 		mRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-		mFile = getFileName(mFile, "3gp");
+		mFile = getFileName("3gp");
+		Log.e("Error", mFile.getAbsolutePath());
 		mRecorder.setOutputFile(mFile.getAbsolutePath());
 		mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
 		try {
@@ -197,14 +225,21 @@ public class AudioRecorderActivity extends Activity implements Runnable {
 		mChronometer.start();
 	}
 
-	private File getFileName(File mFile, String ext) {
+	/**
+	 * Crea un fichero temporal con la extensión ext
+	 * 
+	 * @param ext la extensión del fichero temporal que queremos crear
+	 * @return fichero temporal a utilizar
+	 */
+	private File getFileName(String ext) {
 		File path = new File(Environment.getExternalStorageDirectory()
 				.getPath());
+		File file = null;
 		try {
-			mFile = File.createTempFile("temp", "." + ext, path);
+			file = File.createTempFile("temp", "." + ext, path);
 		} catch (IOException e) {
 		}
-		return mFile;
+		return file;
 	}
 
 	private void stopRecording() {
@@ -216,6 +251,11 @@ public class AudioRecorderActivity extends Activity implements Runnable {
 				R.drawable.audioplayer_button_rec, 0, 0);
 	}
 
+	/* (non-Javadoc)
+	 * @see java.lang.Runnable#run()
+	 * 
+	 * Controla la ejecución de un hilo para controlar el progreso del objeto ProgressBar
+	 */
 	@Override
 	public void run() {
 		int currentPosition = 0;
